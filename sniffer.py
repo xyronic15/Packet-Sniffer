@@ -38,9 +38,15 @@ if platform in win:
             for packet in pkts:
                 if packet.haslayer(TCP):
                     # print(packet[IP].dst)
-                    TCP_ips.append(packet[IP].dst)
+                    if packet.haslayer(IP):
+                        TCP_ips.append(packet[IP].dst)
+                    elif packet.haslayer(IPv6):
+                        TCP_ips.append(packet[IPv6].dst)
                 if packet.haslayer(UDP):
-                    UDP_ips.append(packet[IP].dst)
+                    if packet.haslayer(IP):
+                        UDP_ips.append(packet[IP].dst)
+                    elif packet.haslayer(IPv6):
+                        UDP_ips.append(packet[IPv6].dst)
                     # check if there is a response from the DNS layer
                     if packet.haslayer(DNSRR):
                         # count the number of answers returned by the DNS layer
