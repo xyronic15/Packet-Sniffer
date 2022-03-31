@@ -6,7 +6,7 @@ import os, sys, signal
 
 FILTER = "tcp[tcpflags] & (tcp-syn) != 0  or port 53"
 
-# signal handler for easy exit
+# # signal handler for easy exit
 # def signal_handler(signal, fram):
 #     print("Exiting gracefully")
 #     sys.exit(0)
@@ -25,7 +25,7 @@ FILTER = "tcp[tcpflags] & (tcp-syn) != 0  or port 53"
 #         while datetime.now() < stop:
 #             # sniff the packets
 #             # Sniffer.sniff()
-#             packets = sniff(filter=FILTER, session=IPSession, count=2, prn=lambda x:x.summary())
+#             packets = sniff(filter=FILTER, session=IPSession, count=2) #prn=lambda x:x.summary()
 #             dump1 = PcapWriter("sniffed.pcap", append=True, sync=True)
 #             dump1.write(packets)
 #             # Sniffer.sniff()
@@ -36,11 +36,13 @@ FILTER = "tcp[tcpflags] & (tcp-syn) != 0  or port 53"
 #             pkts = rdpcap(pcap)
 #             UDP_ips = []
 #             TCP_ips = []
-#             # info = []
+#             info = []
 
 #             # iterate through sniffed packets and get the addresses for those with TCP and UDP layers
 #             for packet in pkts:
+#                 # print(type(packet.summary()))
 #                 # info.append(packet.show(dump=True))
+#                 info.append(packet.summary())
 #                 if packet.haslayer(TCP):
 #                     # print(packet[IP].dst)
 #                     if packet.haslayer(IP):
@@ -82,10 +84,10 @@ FILTER = "tcp[tcpflags] & (tcp-syn) != 0  or port 53"
 #                     f.write(str(i) + "\n")
 #                 f.close()
             
-#             # with open('info.txt', 'w+') as f:
-#             #     for i in info:
-#             #         f.write(str(i) + "\n")
-#             #     f.close()
+#             with open('info.txt', 'w+') as f:
+#                 for i in info:
+#                     f.write(str(i) + "\n")
+#                 f.close()
 #             # Sniffer.write()
 #     except KeyboardInterrupt:
 #         print("Sniffing stopped")
@@ -97,6 +99,7 @@ class Sniffer():
         self.TCP_ips = []
         self.in_TCP_not_UDP = []
         # self.info = []
+        self.summary = []
     
     def sniff(self):
         packets = sniff(filter=FILTER, session=IPSession, count=2, prn=lambda x:x.summary())
@@ -111,6 +114,7 @@ class Sniffer():
         # iterate through sniffed packets and get the addresses for those with TCP and UDP layers
         for packet in pkts:
             # self.info.append(packet.show(dump=True))
+            self.summary.append(packet.summary())
             if packet.haslayer(TCP):
                 # print(packet[IP].dst)
                 if packet.haslayer(IP):
@@ -142,12 +146,12 @@ class Sniffer():
                             final = work[3] + "." + work[2] + "." + work[1] + "." + work[0]
                         i-=1
         # remove any TCP addresses that are not seen in UDP IPs
-        self.in_TCP_not_UDP = list(set(TCP_ips)-set(UDP_ips))
+        self.in_TCP_not_UDP = list(set(self.TCP_ips)-set(self.UDP_ips))
     
     def write(self):
         # write to external txt file
         with open('p_threats.txt', 'w+') as f:
-            for i in in_TCP_not_UDP:
+            for i in self.in_TCP_not_UDP:
                 f.write(str(i) + "\n")
             f.close()
         
@@ -155,3 +159,11 @@ class Sniffer():
         #     for i in info:
         #         f.write(str(i) + "\n")
         #     f.close()
+
+        self.UDP_ips.clear()
+        self.TCP_ips.clear()
+        self.in_TCP_not_UDP.clear()
+    
+    def print_summary(self):
+        for i in self.summary:
+            print(i)

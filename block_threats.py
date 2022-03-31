@@ -73,3 +73,5 @@ class Blocker(object):
     def remove_rules(self):
         for i in self.p_threats:
             os.system('netsh advfirewall firewall delete rule name="BLOCK IP {}"'.format(i))
+        self.p_threats.clear()
+        self.sniffed.clear()
