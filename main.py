@@ -2,11 +2,12 @@ from time import sleep
 from scapy.all import *
 from scapy.utils import PcapWriter
 from datetime import *
-import ctypes, os, sys, signal
+import ctypes, os, sys
 from os import path
 from sniffer import Sniffer
 from block_threats import Blocker
 import PySimpleGUI as sg
+import threading
 
 win = ["win32", "win64"]
 platform = sys.platform
@@ -50,7 +51,7 @@ def to_string(given_list):
     to_display = '\n'.join([str(i) for i in given_list])
     return to_display
 
-def run_thread(sniffer, blocker):
+def run_thread(window, sniffer, blocker):
     # Create sniffer and blocker
     # sniffer = Sniffer()
     # blocker = Blocker()
@@ -65,16 +66,22 @@ def run_thread(sniffer, blocker):
         # display packet summaries into the window
         summary_string = to_string(sniffer.summary)
         # window['summary'].update(summary_string)
+        # TBC
+        window.write_event_value('packets', summary_string)
+        sniffer.sniffer_clear()
     
     block_threats(blocker)
 
     # Update blocked IPs window
     ips_string = to_string(blocker.p_threats)
     # window['blocked'].update(ips_string)
+    # TBC
+    window.write_event_value('ips', ips_string)
 
     # blocker.remove_rules()
 
-    return [summary_string, ips_string]
+    # return [summary_string, ips_string]
+    return
 
 def remove_blocked(blocker):
     print("Removing all rules")
@@ -111,16 +118,23 @@ def main():
                     if event == 'continue':
                         print("Running iteration " + str(i))
                         i+=1
-                        window.perform_long_operation(lambda: run_thread(sniffer, blocker), 'block done')
+                        window.perform_long_operation(lambda: run_thread(window, sniffer, blocker), 'block done')
+                        # threading.Thread(target=run_thread, args=(window, sniffer, blocker), daemon=True)
                     elif event == 'block done':
-                        print(values)
-                        window['summary'].update(values[event][0])
-                        window['blocked'].update(values[event][1])
+                        # print(values)
+                        # window['summary'].update(values[event][0])
+                        # window['blocked'].update(values[event][1])
                         window.refresh()
                         # blocker = values[event][2]
                         window.perform_long_operation(lambda: sleep(10), 'remove rules')
                     elif event == 'remove rules':
                         window.perform_long_operation(lambda: remove_blocked(blocker), 'continue')
+                    elif event == 'packets':
+                        window.Element('summary').Update(values[event])
+                        window.refresh()
+                    elif event == 'ips':
+                        window['blocked'].update(values[event])
+                        window.refresh()
 
 
 

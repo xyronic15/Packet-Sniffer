@@ -160,6 +160,11 @@ class Sniffer():
         #         f.write(str(i) + "\n")
         #     f.close()
 
+        # self.UDP_ips.clear()
+        # self.TCP_ips.clear()
+        # self.in_TCP_not_UDP.clear()
+    
+    def sniffer_clear(self):
         self.UDP_ips.clear()
         self.TCP_ips.clear()
         self.in_TCP_not_UDP.clear()
