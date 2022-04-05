@@ -131,9 +131,11 @@ def main():
                         window.perform_long_operation(lambda: remove_blocked(blocker), 'continue')
                     elif event == 'packets':
                         window.Element('summary').Update(values[event])
+                        window.Element('summary').set_vscroll_position(1)
                         window.refresh()
                     elif event == 'ips':
                         window['blocked'].update(values[event])
+                        window.Element('blocked').set_vscroll_position(1)
                         window.refresh()
 
 
