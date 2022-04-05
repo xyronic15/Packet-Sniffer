@@ -34,10 +34,6 @@ def sniff_threats(sniffer):
     sniffer.analyze()
     # sniffer.print_summary()
 
-    # # display packet summaries into the window
-    # summary_string = to_string(sniffer.summary)
-    # window['summary'].update(summary_string)
-
     # write the unwanted IPs to p_threats.txt
     sniffer.write()
 
@@ -46,10 +42,6 @@ def block_threats(blocker):
     # read threats from p_threats.txt
     blocker.read_threats()
 
-    # # Update blocked IPs window
-    # ips_string = to_string(blocker.p_threats)
-    # window['blocked'].update(ips_string)
-
     # block by adding rules to Windows Firewall
     blocker.add_rules()
 
@@ -57,6 +49,37 @@ def to_string(given_list):
 
     to_display = '\n'.join([str(i) for i in given_list])
     return to_display
+
+def run_thread(sniffer, blocker):
+    # Create sniffer and blocker
+    # sniffer = Sniffer()
+    # blocker = Blocker()
+
+    now = datetime.now()
+    stop = now + timedelta(seconds=20)
+    flushdns = os.system("ipconfig /flushdns")
+
+    # sniff for threats
+    while datetime.now() < stop:
+        sniff_threats(sniffer)
+        # display packet summaries into the window
+        summary_string = to_string(sniffer.summary)
+        # window['summary'].update(summary_string)
+    
+    block_threats(blocker)
+
+    # Update blocked IPs window
+    ips_string = to_string(blocker.p_threats)
+    # window['blocked'].update(ips_string)
+
+    # blocker.remove_rules()
+
+    return [summary_string, ips_string]
+
+def remove_blocked(blocker):
+    print("Removing all rules")
+    blocker.remove_rules()
+    return
 
 def main():
     
@@ -75,7 +98,7 @@ def main():
             # window = sg.Window('Packet Sniffer', layout)
 
             i = 1
-            # window.write_event_value('continue',i)
+            window.write_event_value('continue', i)
 
             try:
                 while True:
@@ -83,31 +106,48 @@ def main():
                     event, values = window.read(timeout=100)
                     if event == sg.WIN_CLOSED or event == 'Cancel': # if user closes window or clicks cancel
                         break
+                    window.refresh()
+                    
+                    if event == 'continue':
+                        print("Running iteration " + str(i))
+                        i+=1
+                        window.perform_long_operation(lambda: run_thread(sniffer, blocker), 'block done')
+                    elif event == 'block done':
+                        print(values)
+                        window['summary'].update(values[event][0])
+                        window['blocked'].update(values[event][1])
+                        window.refresh()
+                        # blocker = values[event][2]
+                        window.perform_long_operation(lambda: sleep(10), 'remove rules')
+                    elif event == 'remove rules':
+                        window.perform_long_operation(lambda: remove_blocked(blocker), 'continue')
+
+
 
                     # else:
-                    print("running iteration " + str(i))
-                    i+=1
-                    now = datetime.now()
-                    stop = now + timedelta(seconds=20)
-                    flushdns = os.system("ipconfig /flushdns")
+                    # print("running iteration " + str(i))
+                    # i+=1
+                    # now = datetime.now()
+                    # stop = now + timedelta(seconds=20)
+                    # flushdns = os.system("ipconfig /flushdns")
 
-                    # sniff for threats
-                    while datetime.now() < stop:
-                        sniff_threats(sniffer)
-                        # display packet summaries into the window
-                        summary_string = to_string(sniffer.summary)
-                        window['summary'].update(summary_string)
+                    # # sniff for threats
+                    # while datetime.now() < stop:
+                    #     sniff_threats(sniffer)
+                    #     # display packet summaries into the window
+                    #     summary_string = to_string(sniffer.summary)
+                    #     window['summary'].update(summary_string)
                     
-                    block_threats(blocker)
+                    # block_threats(blocker)
 
-                    # Update blocked IPs window
-                    ips_string = to_string(blocker.p_threats)
-                    window['blocked'].update(ips_string)
+                    # # Update blocked IPs window
+                    # ips_string = to_string(blocker.p_threats)
+                    # window['blocked'].update(ips_string)
 
-                    event, values = window.read(timeout=100)
-                    sleep(10)
+                    # event, values = window.read(timeout=100)
+                    # sleep(10)
 
-                    blocker.remove_rules()
+                    # blocker.remove_rules()
 
             except KeyboardInterrupt:
                 print("Removing all rules")
